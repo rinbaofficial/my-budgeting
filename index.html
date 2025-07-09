@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Spreadsheet Keuangan Pribadi & Bisnis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .kpi-value {
+            font-weight: 700;
+            color: #003f5c;
+        }
+        .kpi-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 font-sans">
+
+    <nav class="bg-[#003f5c] p-4 shadow-md">
+        <div class="container mx-auto flex flex-wrap justify-center md:justify-start gap-4">
+            <button id="tab-dashboard" class="tab-button py-2 px-4 rounded-lg font-semibold transition-colors duration-200 bg-[#ffa600] text-white" data-tab="dashboard">
+                Dashboard
+            </button>
+            <button id="tab-pemasukanPribadi" class="tab-button py-2 px-4 rounded-lg font-semibold transition-colors duration-200 text-gray-200 hover:bg-[#58508d]" data-tab="pemasukanPribadi">
+                Pemasukan Pribadi
+            </button>
+            <button id="tab-pengeluaranPribadi" class="tab-button py-2 px-4 rounded-lg font-semibold transition-colors duration-200 text-gray-200 hover:bg-[#58508d]" data-tab="pengeluaranPribadi">
+                Pengeluaran Pribadi
+            </button>
+            <button id="tab-pemasukanBisnis" class="tab-button py-2 px-4 rounded-lg font-semibold transition-colors duration-200 text-gray-200 hover:bg-[#58508d]" data-tab="pemasukanBisnis">
+                Pemasukan Bisnis
+            </button>
+            <button id="tab-pengeluaranBisnis" class="tab-button py-2 px-4 rounded-lg font-semibold transition-colors duration-200 text-gray-200 hover:bg-[#58508d]" data-tab="pengeluaranBisnis">
+                Pengeluaran Bisnis
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 py-8">
+        <div id="dashboard-content" class="tab-content active">
+            <div class="p-6">
+                <h2 class="text-3xl font-bold text-[#003f5c] mb-6 text-center">Dashboard Keuangan</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow-md p-6 text-center border-l-4 border-[#ffa600]">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Saldo Bersih Pribadi</h3>
+                        <p id="personal-net-balance" class="text-4xl font-bold text-[#003f5c]">Rp0</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 text-center border-l-4 border-[#ef5675]">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Laba Bersih Bisnis</h3>
+                        <p id="business-net-profit" class="text-4xl font-bold text-[#003f5c]">Rp0</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 text-center border-l-4 border-[#7a5195]">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Total Saldo Gabungan</h3>
+                        <p id="combined-total-balance" class="text-4xl font-bold text-[#003f5c]">Rp0</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-xl font-semibold text-center text-gray-700 mb-4">Komposisi Pemasukan Pribadi</h3>
+                        <div class="chart-container h-80">
+                            <canvas id="personalIncomeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-xl font-semibold text-center text-gray-700 mb-4">Komposisi Pengeluaran Pribadi</h3>
+                        <div class="chart-container h-80">
+                            <canvas id="personalExpenseChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-xl font-semibold text-center text-gray-700 mb-4">Komposisi Pemasukan Bisnis</h3>
+                        <div class="chart-container h-80">
+                            <canvas id="businessIncomeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-xl font-semibold text-center text-gray-700 mb-4">Komposisi Pengeluaran Bisnis</h3>
+                        <div class="chart-container h-80">
+                            <canvas id="businessExpenseChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pemasukanPribadi-content" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Form Pemasukan Pribadi</h2>
+                <form id="personalIncomeForm">
+                    <div class="mb-4">
+                        <label for="pi-tanggal" class="block text-gray-700 text-sm font-bold mb-2">Tanggal</label>
+                        <input type="date" id="pi-tanggal" name="tanggal" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="pi-sumber" class="block text-gray-700 text-sm font-bold mb-2">Sumber Pemasukan</label>
+                        <input type="text" id="pi-sumber" name="sumber" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Gaji Bulanan" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="pi-deskripsi" class="block text-gray-700 text-sm font-bold mb-2">Deskripsi/Keterangan</label>
+                        <input type="text" id="pi-deskripsi" name="deskripsi" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Gaji Juli 2025" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="pi-jumlah" class="block text-gray-700 text-sm font-bold mb-2">Jumlah (Rp)</label>
+                        <input type="number" id="pi-jumlah" name="jumlah" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="5000000" required step="0.01">
+                    </div>
+                    <div class="mb-4">
+                        <label for="pi-metode" class="block text-gray-700 text-sm font-bold mb-2">Metode Pembayaran</label>
+                        <input type="text" id="pi-metode" name="metode" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Transfer Bank" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="pi-kategori" class="block text-gray-700 text-sm font-bold mb-2">Kategori</label>
+                        <input type="text" id="pi-kategori" name="kategori" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Gaji">
+                    </div>
+                    <button type="submit" class="bg-[#ffa600] hover:bg-[#ef5675] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Tambah Data
+                    </button>
+                </form>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Data Pemasukan Pribadi</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sumber Pemasukan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah (Rp)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metode</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="personalIncomeTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="pengeluaranPribadi-content" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Form Pengeluaran Pribadi</h2>
+                <form id="personalExpenseForm">
+                    <div class="mb-4">
+                        <label for="pe-tanggal" class="block text-gray-700 text-sm font-bold mb-2">Tanggal</label>
+                        <input type="date" id="pe-tanggal" name="tanggal" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="pe-kategori" class="block text-gray-700 text-sm font-bold mb-2">Kategori Pengeluaran</label>
+                        <input type="text" id="pe-kategori" name="kategori" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Makanan & Minuman" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="pe-deskripsi" class="block text-gray-700 text-sm font-bold mb-2">Deskripsi/Keterangan</label>
+                        <input type="text" id="pe-deskripsi" name="deskripsi" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Makan Siang Kantor" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="pe-jumlah" class="block text-gray-700 text-sm font-bold mb-2">Jumlah (Rp)</label>
+                        <input type="number" id="pe-jumlah" name="jumlah" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="50000" required step="0.01">
+                    </div>
+                    <div class="mb-4">
+                        <label for="pe-metode" class="block text-gray-700 text-sm font-bold mb-2">Metode Pembayaran</label>
+                        <input type="text" id="pe-metode" name="metode" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Debit" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="pe-keteranganTambahan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Tambahan</label>
+                        <input type="text" id="pe-keteranganTambahan" name="keteranganTambahan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="">
+                    </div>
+                    <button type="submit" class="bg-[#ffa600] hover:bg-[#ef5675] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Tambah Data
+                    </button>
+                </form>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Data Pengeluaran Pribadi</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori Pengeluaran</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah (Rp)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metode</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan Tambahan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="personalExpenseTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="pemasukanBisnis-content" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Form Pemasukan Bisnis</h2>
+                <form id="businessIncomeForm">
+                    <div class="mb-4">
+                        <label for="bi-tanggal" class="block text-gray-700 text-sm font-bold mb-2">Tanggal</label>
+                        <input type="date" id="bi-tanggal" name="tanggal" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="bi-sumber" class="block text-gray-700 text-sm font-bold mb-2">Sumber Pemasukan</label>
+                        <input type="text" id="bi-sumber" name="sumber" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Penjualan Produk A" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="bi-pelanggan" class="block text-gray-700 text-sm font-bold mb-2">Pelanggan/Klien</label>
+                        <input type="text" id="bi-pelanggan" name="pelanggan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="PT. Maju Jaya" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="bi-deskripsi" class="block text-gray-700 text-sm font-bold mb-2">Deskripsi/Keterangan</label>
+                        <input type="text" id="bi-deskripsi" name="deskripsi" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Penjualan 10 unit Produk A" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="bi-jumlah" class="block text-gray-700 text-sm font-bold mb-2">Jumlah (Rp)</label>
+                        <input type="number" id="bi-jumlah" name="jumlah" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="2500000" required step="0.01">
+                    </div>
+                    <div class="mb-4">
+                        <label for="bi-metode" class="block text-gray-700 text-sm font-bold mb-2">Metode Pembayaran</label>
+                        <input type="text" id="bi-metode" name="metode" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Transfer Bank" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="bi-status" class="block text-gray-700 text-sm font-bold mb-2">Status Pembayaran</label>
+                        <input type="text" id="bi-status" name="status" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Lunas">
+                    </div>
+                    <button type="submit" class="bg-[#ffa600] hover:bg-[#ef5675] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Tambah Data
+                    </button>
+                </form>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Data Pemasukan Bisnis</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sumber Pemasukan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelanggan/Klien</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah (Rp)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metode</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="businessIncomeTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="pengeluaranBisnis-content" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Form Pengeluaran Bisnis</h2>
+                <form id="businessExpenseForm">
+                    <div class="mb-4">
+                        <label for="be-tanggal" class="block text-gray-700 text-sm font-bold mb-2">Tanggal</label>
+                        <input type="date" id="be-tanggal" name="tanggal" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="be-kategori" class="block text-gray-700 text-sm font-bold mb-2">Kategori Pengeluaran</label>
+                        <input type="text" id="be-kategori" name="kategori" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Bahan Baku" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="be-vendor" class="block text-gray-700 text-sm font-bold mb-2">Vendor/Supplier</label>
+                        <input type="text" id="be-vendor" name="vendor" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Supplier XYZ" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="be-deskripsi" class="block text-gray-700 text-sm font-bold mb-2">Deskripsi/Keterangan</label>
+                        <input type="text" id="be-deskripsi" name="deskripsi" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Pembelian bahan baku" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="be-jumlah" class="block text-gray-700 text-sm font-bold mb-2">Jumlah (Rp)</label>
+                        <input type="number" id="be-jumlah" name="jumlah" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="1000000" required step="0.01">
+                    </div>
+                    <div class="mb-4">
+                        <label for="be-metode" class="block text-gray-700 text-sm font-bold mb-2">Metode Pembayaran</label>
+                        <input type="text" id="be-metode" name="metode" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Transfer Bank" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="be-keteranganTambahan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Tambahan</label>
+                        <input type="text" id="be-keteranganTambahan" name="keteranganTambahan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="">
+                    </div>
+                    <button type="submit" class="bg-[#ffa600] hover:bg-[#ef5675] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Tambah Data
+                    </button>
+                </form>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Data Pengeluaran Bisnis</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori Pengeluaran</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor/Supplier</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah (Rp)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metode</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan Tambahan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="businessExpenseTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Color palette for charts
+        const chartColors = {
+            blue: '#003f5c',
+            purple: '#7a5195',
+            pink: '#ef5675',
+            orange: '#ffa600',
+            lightBlue: '#58508d',
+            red: '#bc5090',
+        };
+        const colorPalette = [chartColors.blue, chartColors.purple, chartColors.pink, chartColors.orange, chartColors.lightBlue, chartColors.red];
+
+        // Function to wrap long labels
+        const formatLabel = (str, maxLength = 16) => {
+            if (str.length <= maxLength) return str;
+            const words = str.split(' ');
+            let lines = [];
+            let currentLine = '';
+            for (const word of words) {
+                if ((currentLine + word).length > maxLength && currentLine !== '') {
+                    lines.push(currentLine.trim());
+                    currentLine = '';
+                }
+                currentLine += word + ' ';
+            }
+            lines.push(currentLine.trim());
+            return lines;
+        };
+
+        // Standard Chart.js tooltip configuration
+        const tooltipTitleCallback = (tooltipItems) => {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) {
+                return label.join(' ');
+            }
+            return label;
+        };
+
+        const defaultChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        title: tooltipTitleCallback
+                    }
+                }
+            }
+        };
+
+        // Data storage (simulating state)
+        let personalIncomes = [
+            { id: 1, tanggal: '2025-07-01', sumber: 'Gaji Bulanan', deskripsi: 'Gaji Juli', jumlah: 5000000, metode: 'Transfer Bank', kategori: 'Gaji' },
+            { id: 2, tanggal: '2025-07-05', sumber: 'Investasi', deskripsi: 'Dividen Saham', jumlah: 750000, metode: 'Transfer Bank', kategori: 'Investasi' },
+        ];
+        let personalExpenses = [
+            { id: 3, tanggal: '2025-07-02', kategori: 'Makanan & Minuman', deskripsi: 'Makan Siang', jumlah: 50000, metode: 'Debit', keteranganTambahan: '' },
+            { id: 4, tanggal: '2025-07-03', kategori: 'Transportasi', deskripsi: 'Bensin', jumlah: 100000, metode: 'Tunai', keteranganTambahan: '' },
+            { id: 5, tanggal: '2025-07-04', kategori: 'Tagihan Rutin', deskripsi: 'Listrik', jumlah: 250000, metode: 'Transfer Bank', keteranganTambahan: '' },
+        ];
+        let businessIncomes = [
+            { id: 6, tanggal: '2025-07-01', sumber: 'Penjualan Produk A', pelanggan: 'PT. Maju Jaya', deskripsi: 'Penjualan 10 unit', jumlah: 2500000, metode: 'Transfer Bank', status: 'Lunas' },
+            { id: 7, tanggal: '2025-07-06', sumber: 'Jasa Konsultasi', pelanggan: 'CV. Sejahtera', deskripsi: 'Proyek X', jumlah: 1500000, metode: 'Transfer Bank', status: 'Lunas' },
+        ];
+        let businessExpenses = [
+            { id: 8, tanggal: '2025-07-03', kategori: 'Bahan Baku', vendor: 'Supplier XYZ', deskripsi: 'Pembelian Kopi', jumlah: 1000000, metode: 'Transfer Bank', keteranganTambahan: '' },
+            { id: 9, tanggal: '2025-07-07', kategori: 'Gaji Karyawan', vendor: 'Karyawan A', deskripsi: 'Gaji Mingguan', jumlah: 500000, metode: 'Transfer Bank', keteranganTambahan: '' },
+        ];
+
+        // Chart instances
+        let personalIncomeChart, personalExpenseChart, businessIncomeChart, businessExpenseChart;
+
+        // Function to render data tables
+        function renderTable(data, tableBodyId, columns, onDelete) {
+            const tableBody = document.getElementById(tableBodyId);
+            tableBody.innerHTML = ''; // Clear existing rows
+            if (data.length === 0) {
+                const noDataRow = document.createElement('tr');
+                noDataRow.innerHTML = `<td colspan="${columns.length + (onDelete ? 1 : 0)}" class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">Belum ada data yang tercatat.</td>`;
+                tableBody.appendChild(noDataRow);
+                return;
+            }
+
+            data.forEach(rowData => {
+                const row = document.createElement('tr');
+                columns.forEach(col => {
+                    const cell = document.createElement('td');
+                    cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                    cell.textContent = col.key === 'jumlah' ? `Rp${rowData[col.key].toLocaleString('id-ID')}` : rowData[col.key];
+                    row.appendChild(cell);
+                });
+                if (onDelete) {
+                    const actionCell = document.createElement('td');
+                    actionCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium';
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'text-red-600 hover:text-red-900';
+                    deleteButton.textContent = 'Hapus';
+                    deleteButton.onclick = () => onDelete(rowData.id);
+                    actionCell.appendChild(deleteButton);
+                    row.appendChild(actionCell);
+                }
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Function to update dashboard charts and KPIs
+        function updateDashboard() {
+            // Calculate totals
+            const totalPersonalIncome = personalIncomes.reduce((sum, item) => sum + item.jumlah, 0);
+            const totalPersonalExpense = personalExpenses.reduce((sum, item) => sum + item.jumlah, 0);
+            const totalBusinessIncome = businessIncomes.reduce((sum, item) => sum + item.jumlah, 0);
+            const totalBusinessExpense = businessExpenses.reduce((sum, item) => sum + item.jumlah, 0);
+
+            const personalNetBalance = totalPersonalIncome - totalPersonalExpense;
+            const businessNetProfit = totalBusinessIncome - totalBusinessExpense;
+            const combinedTotalBalance = personalNetBalance + businessNetProfit;
+
+            // Update KPI displays
+            document.getElementById('personal-net-balance').textContent = `Rp${personalNetBalance.toLocaleString('id-ID')}`;
+            document.getElementById('business-net-profit').textContent = `Rp${businessNetProfit.toLocaleString('id-ID')}`;
+            document.getElementById('combined-total-balance').textContent = `Rp${combinedTotalBalance.toLocaleString('id-ID')}`;
+
+            // Destroy existing charts before creating new ones
+            if (personalIncomeChart) personalIncomeChart.destroy();
+            if (personalExpenseChart) personalExpenseChart.destroy();
+            if (businessIncomeChart) businessIncomeChart.destroy();
+            if (businessExpenseChart) businessExpenseChart.destroy();
+
+            // Personal Income Chart
+            const personalIncomeCategories = personalIncomes.reduce((acc, item) => {
+                acc[item.sumber] = (acc[item.sumber] || 0) + item.jumlah;
+                return acc;
+            }, {});
+            personalIncomeChart = new Chart(document.getElementById('personalIncomeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(personalIncomeCategories).map(l => formatLabel(l)),
+                    datasets: [{
+                        label: 'Pemasukan Pribadi',
+                        data: Object.values(personalIncomeCategories),
+                        backgroundColor: colorPalette,
+                        hoverOffset: 4
+                    }]
+                },
+                options: defaultChartOptions
+            });
+
+            // Personal Expense Chart
+            const personalExpenseCategories = personalExpenses.reduce((acc, item) => {
+                acc[item.kategori] = (acc[item.kategori] || 0) + item.jumlah;
+                return acc;
+            }, {});
+            personalExpenseChart = new Chart(document.getElementById('personalExpenseChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(personalExpenseCategories).map(l => formatLabel(l)),
+                    datasets: [{
+                        label: 'Pengeluaran Pribadi (Rp)',
+                        data: Object.values(personalExpenseCategories),
+                        backgroundColor: chartColors.pink,
+                    }]
+                },
+                options: { ...defaultChartOptions, indexAxis: 'y' }
+            });
+
+            // Business Income Chart
+            const businessIncomeCategories = businessIncomes.reduce((acc, item) => {
+                acc[item.sumber] = (acc[item.sumber] || 0) + item.jumlah;
+                return acc;
+            }, {});
+            businessIncomeChart = new Chart(document.getElementById('businessIncomeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(businessIncomeCategories).map(l => formatLabel(l)),
+                    datasets: [{
+                        label: 'Pemasukan Bisnis',
+                        data: Object.values(businessIncomeCategories),
+                        backgroundColor: colorPalette,
+                        hoverOffset: 4
+                    }]
+                },
+                options: defaultChartOptions
+            });
+
+            // Business Expense Chart
+            const businessExpenseCategories = businessExpenses.reduce((acc, item) => {
+                acc[item.kategori] = (acc[item.kategori] || 0) + item.jumlah;
+                return acc;
+            }, {});
+            businessExpenseChart = new Chart(document.getElementById('businessExpenseChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(businessExpenseCategories).map(l => formatLabel(l)),
+                    datasets: [{
+                        label: 'Pengeluaran Bisnis (Rp)',
+                        data: Object.values(businessExpenseCategories),
+                        backgroundColor: chartColors.purple,
+                    }]
+                },
+                options: { ...defaultChartOptions, indexAxis: 'y' }
+            });
+        }
+
+        // Function to switch tabs
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabId}-content`).classList.add('active');
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('bg-[#ffa600]', 'text-white');
+                button.classList.add('text-gray-200', 'hover:bg-[#58508d]');
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('bg-[#ffa600]', 'text-white');
+            document.getElementById(`tab-${tabId}`).classList.remove('text-gray-200', 'hover:bg-[#58508d]');
+
+            // Re-render dashboard when switching to it
+            if (tabId === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Initialize tables and dashboard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Define column configurations
+            const personalIncomeColumns = [
+                { key: 'tanggal', label: 'Tanggal' },
+                { key: 'sumber', label: 'Sumber Pemasukan' },
+                { key: 'deskripsi', label: 'Deskripsi' },
+                { key: 'jumlah', label: 'Jumlah (Rp)' },
+                { key: 'metode', label: 'Metode' },
+                { key: 'kategori', label: 'Kategori' },
+            ];
+            const personalExpenseColumns = [
+                { key: 'tanggal', label: 'Tanggal' },
+                { key: 'kategori', label: 'Kategori Pengeluaran' },
+                { key: 'deskripsi', label: 'Deskripsi' },
+                { key: 'jumlah', label: 'Jumlah (Rp)' },
+                { key: 'metode', label: 'Metode' },
+                { key: 'keteranganTambahan', label: 'Keterangan Tambahan' },
+            ];
+            const businessIncomeColumns = [
+                { key: 'tanggal', label: 'Tanggal' },
+                { key: 'sumber', label: 'Sumber Pemasukan' },
+                { key: 'pelanggan', label: 'Pelanggan/Klien' },
+                { key: 'deskripsi', label: 'Deskripsi' },
+                { key: 'jumlah', label: 'Jumlah (Rp)' },
+                { key: 'metode', label: 'Metode' },
+                { key: 'status', label: 'Status' },
+            ];
+            const businessExpenseColumns = [
+                { key: 'tanggal', label: 'Tanggal' },
+                { key: 'kategori', label: 'Kategori Pengeluaran' },
+                { key: 'vendor', label: 'Vendor/Supplier' },
+                { key: 'deskripsi', label: 'Deskripsi' },
+                { key: 'jumlah', label: 'Jumlah (Rp)' },
+                { key: 'metode', label: 'Metode' },
+                { key: 'keteranganTambahan', label: 'Keterangan Tambahan' },
+            ];
+
+            // Render initial tables
+            renderTable(personalIncomes, 'personalIncomeTableBody', personalIncomeColumns, (id) => {
+                personalIncomes = personalIncomes.filter(item => item.id !== id);
+                renderTable(personalIncomes, 'personalIncomeTableBody', personalIncomeColumns, (id) => {
+                    personalIncomes = personalIncomes.filter(item => item.id !== id);
+                    renderTable(personalIncomes, 'personalIncomeTableBody', personalIncomeColumns, arguments[2], arguments[3]);
+                });
+                updateDashboard();
+            });
+            renderTable(personalExpenses, 'personalExpenseTableBody', personalExpenseColumns, (id) => {
+                personalExpenses = personalExpenses.filter(item => item.id !== id);
+                renderTable(personalExpenses, 'personalExpenseTableBody', personalExpenseColumns, (id) => {
+                    personalExpenses = personalExpenses.filter(item => item.id !== id);
+                    renderTable(personalExpenses, 'personalExpenseTableBody', personalExpenseColumns, arguments[2], arguments[3]);
+                });
+                updateDashboard();
+            });
+            renderTable(businessIncomes, 'businessIncomeTableBody', businessIncomeColumns, (id) => {
+                businessIncomes = businessIncomes.filter(item => item.id !== id);
+                renderTable(businessIncomes, 'businessIncomeTableBody', businessIncomeColumns, (id) => {
+                    businessIncomes = businessIncomes.filter(item => item.id !== id);
+                    renderTable(businessIncomes, 'businessIncomeTableBody', businessIncomeColumns, arguments[2], arguments[3]);
+                });
+                updateDashboard();
+            });
+            renderTable(businessExpenses, 'businessExpenseTableBody', businessExpenseColumns, (id) => {
+                businessExpenses = businessExpenses.filter(item => item.id !== id);
+                renderTable(businessExpenses, 'businessExpenseTableBody', businessExpenseColumns, (id) => {
+                    businessExpenses = businessExpenses.filter(item => item.id !== id);
+                    renderTable(businessExpenses, 'businessExpenseTableBody', businessExpenseColumns, arguments[2], arguments[3]);
+                });
+                updateDashboard();
+            });
+
+            // Set up form submissions
+            document.getElementById('personalIncomeForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newItem = {
+                    id: Date.now(),
+                    tanggal: formData.get('tanggal'),
+                    sumber: formData.get('sumber'),
+                    deskripsi: formData.get('deskripsi'),
+                    jumlah: parseFloat(formData.get('jumlah')),
+                    metode: formData.get('metode'),
+                    kategori: formData.get('kategori'),
+                };
+                personalIncomes.push(newItem);
+                renderTable(personalIncomes, 'personalIncomeTableBody', personalIncomeColumns, (id) => {
+                    personalIncomes = personalIncomes.filter(item => item.id !== id);
+                    renderTable(personalIncomes, 'personalIncomeTableBody', personalIncomeColumns, arguments[2], arguments[3]);
+                });
+                updateDashboard();
+                e.target.reset();
+            });
+
+            document.getElementById('personalExpenseForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newItem = {
+                    id: Date.now(),
+                    tanggal: formData.get('tanggal'),
+                    kategori: formData.get('kategori'),
+                    deskripsi: formData.get('deskripsi'),
+                    jumlah: parseFloat(formData.get('jumlah')),
+                    metode: formData.get('metode'),
+                    keteranganTambahan: formData.get('keteranganTambahan'),
+                };
+                personalExpenses.push(newItem);
+                renderTable(personalExpenses, 'personalExpenseTableBody', personalExpenseColumns, (id) => {
+                    personalExpenses = personalExpenses.filter(item => item.id !== id);
+                    renderTable(personalExpenses, 'personalExpenseTableBody', personalExpenseColumns, arguments[2], arguments[3]);
+                });
+                updateDashboard();
+                e.target.reset();
+            });
+
+            document.getElementById('businessIncomeForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newItem = {
+                    id: Date.now(),
+                    tanggal: formData.get('tanggal'),
+                    sumber: formData.get('sumber'),
+                    pelanggan: formData.get('pelanggan'),
+                    deskripsi: formData.get('deskripsi'),
+                    jumlah: parseFloat(formData.get('jumlah')),
+                    metode: formData.get('metode'),
+                    status: formData.get('status'),
+                };
+                businessIncomes.push(newItem);
+                renderTable(businessIncomes, 'businessIncomeTableBody', businessIncomeColumns, (id) => {
+                    businessIncomes = businessIncomes.filter(item => item.id !== id);
+                    renderTable(businessIncomes, 'businessIncomeTableBody', businessIncomeColumns, arguments[2], arguments[3]);
+                });
+                updateDashboard();
+                e.target.reset();
+            });
+
+            document.getElementById('businessExpenseForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newItem = {
+                    id: Date.now(),
+                    tanggal: formData.get('tanggal'),
+                    kategori: formData.get('kategori'),
+                    vendor: formData.get('vendor'),
+                    deskripsi: formData.get('deskripsi'),
+                    jumlah: parseFloat(formData.get('jumlah')),
+                    metode: formData.get('metode'),
+                    keteranganTambahan: formData.get('keteranganTambahan'),
+                };
+                businessExpenses.push(newItem);
+                renderTable(businessExpenses, 'businessExpenseTableBody', businessExpenseColumns, (id) => {
+                    businessExpenses = businessExpenses.filter(item => item.id !== id);
+                    renderTable(businessExpenses, 'businessExpenseTableBody', businessExpenseColumns, arguments[2], arguments[3]);
+                });
+                updateDashboard();
+                e.target.reset();
+            });
+
+            // Set up tab switching
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    showTab(button.dataset.tab);
+                });
+            });
+
+            // Initial dashboard update
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>
