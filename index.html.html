@@ -743,8 +743,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.target.reset();
             });
 
-            document.getElementById('businessExpenseForm').addEventListener('submit', (e) => {
-                saveAllToLocalStorage();
+            document.getElementById('businessExpenseForm').addEventListener('submit', (e) => {{ 
+                
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const newItem = {
@@ -761,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderTable(businessExpenses, 'businessExpenseTableBody', businessExpenseColumns, (id) => {
                     businessExpenses = businessExpenses.filter(item => item.id !== id);
                     renderTable(businessExpenses, 'businessExpenseTableBody', businessExpenseColumns, arguments[2], arguments[3]);
-                });
+                 saveAllToLocalStorage(); }});
                 updateDashboard();
                 e.target.reset();
             });
